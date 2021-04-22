@@ -234,5 +234,10 @@ int main(){
     
     j = 0;
 
+    for (i = 0; i < 256; i++) {
+        j = (j + S[i] + key[i % key.size()]) % 256;
+        swap(S[i], S[j]);
+    }
+
     return 0;
 }
