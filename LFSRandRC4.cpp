@@ -1,6 +1,7 @@
 #include <iostream>
 #include <NTL/ZZ.h>
 #include <time.h>
+#include <string>
 
 using namespace NTL;
 
@@ -128,13 +129,39 @@ ZZ generateNumberJacobi(unsigned long bitLength) {
     return randomNumber;
 }
 
+void testPercentage(int iterations) {
+    int countZero = 0, countOne = 0, count;
+    ZZ number;
+
+    for (int i = 0; i < iterations; i++) {
+        number = generateNumberLFSR(1024);
+        while (number != 0) {
+            switch (bit(number, 0) /*number % 2*/) {
+            case 0:
+                countZero++;
+                break;
+            case 1:
+                countOne++;
+                break;
+            }
+            number >>= 1;
+        }
+    }
+
+    double percentage = 0;
+
+    count = countOne + countZero;
+    percentage = static_cast<double>(countZero) / static_cast<double>(count);
+    std::cout << "Percentages of\n0: " << percentage * 100 << "%\n1: " << (1 - percentage) * 100 << "%\n";
+}
+
 int main(){
     int choice = 1;
     int choiceLFSR = -1;
     double timeLFSR, timeBBS, timeJacobi;
     time_t start, end;
 
-    while (choice) {
+    /*while (choice) {
         switch (choice) {
         case 1:
             std::cout << "1. LFSR\n2. RC4\n3. Exit\n";
@@ -149,10 +176,10 @@ int main(){
 
             break;
         case 2:
-            std::cout << "1. Generate Number With LFSR\n2. Compare Performance with other Generators\n3. Back\n";
+            std::cout << "1. Generate Number With LFSR\n2. Compare Performance with other Generators\n3. Test Percentage\n4. Back\n";
             do {
                 std::cin >> choiceLFSR;
-            } while (choiceLFSR <= 0 || choiceLFSR > 3);
+            } while (choiceLFSR <= 0 || choiceLFSR > 4);
 
             switch (choiceLFSR) {
             case 1:
@@ -184,15 +211,28 @@ int main(){
 
                 break;
             case 3:
+                testPercentage(100);
+                break;
+            case 4:
                 choice = 1;
             }
-
             break;
         case 3:
             choice = 1;
             break;
         }
-    }
+    }*/
+
+    std::string key;
+
+    key = "pedia";
+    int S[256];
+    int i, j;
+
+    for (i = 0; i < 256; i++)
+        S[i] = i;
+    
+    j = 0;
 
     return 0;
 }
