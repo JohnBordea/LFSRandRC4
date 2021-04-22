@@ -1,5 +1,6 @@
 #include <iostream>
 #include <NTL/ZZ.h>
+#include <time.h>
 
 using namespace NTL;
 
@@ -64,10 +65,134 @@ ZZ generateNumberLFSR(unsigned int bitLength) {
     return randomNumber;
 }
 
-int main()
-{
-    for (int i = 0; i < 32; i++)
-        std::cout << generateNumberLFSR(1024) << std::endl;
+ZZ generateNumberBBS(unsigned long bitLength) {
+    ZZ p, q;
+    do {
+        do {
+            p = GenPrime_ZZ(bitLength / 2);
+        } while (p % 4 != 3);
+        do {
+            q = GenPrime_ZZ(bitLength / 2);
+        } while (q % 4 != 3);
+    } while (p == q);
+
+    ZZ N = p * q;
+
+    ZZ seed;
+    do {
+        seed = RandomBnd(N);
+    } while (seed % p == 0 || seed % q == 0);
+
+    ZZ randomNumber = (ZZ)0;
+
+    for (int i = 0; i < bitLength; i++) {
+        seed = (seed * seed) % N;
+        randomNumber = (randomNumber << 1) + (seed % 2);
+    }
+
+    return randomNumber;
+}
+
+ZZ jacobiSymbol(ZZ n, ZZ k) {
+    n %= k;
+    int t = 1;
+    while (n != 0) {
+        while (n % 2 == 0) {
+            n /= 2;
+            int r = k % 8;
+            if (r == 3 || r == 5)
+                t = -t;
+        }
+        swap(n, k);
+        if (n % 4 == 3 && k % 4 == 3)
+            t = -t;
+        n %= k;
+    }
+    return (k == 1) ? (ZZ)t : (ZZ)0;
+}
+
+ZZ generateNumberJacobi(unsigned long bitLength) {
+    ZZ a, n;
+
+    n = GenPrime_ZZ(bitLength);
+    a = RandomBnd(n);
+
+    ZZ randomNumber = (ZZ)0;
+
+    for (int i = 0; i < bitLength; i++) {
+        randomNumber <<= 1;
+        if (jacobiSymbol(a + i, n) != (ZZ)-1)
+            randomNumber += 1;
+    }
+
+    return randomNumber;
+}
+
+int main(){
+    int choice = 1;
+    int choiceLFSR = -1;
+    double timeLFSR, timeBBS, timeJacobi;
+    time_t start, end;
+
+    while (choice) {
+        switch (choice) {
+        case 1:
+            std::cout << "1. LFSR\n2. RC4\n3. Exit\n";
+
+            do {
+                std::cin >> choice;
+            } while (choice <= 0 || choice > 3);
+
+            choice++;
+            if (choice == 4)
+                choice = 0;
+
+            break;
+        case 2:
+            std::cout << "1. Generate Number With LFSR\n2. Compare Performance with other Generators\n3. Back\n";
+            do {
+                std::cin >> choiceLFSR;
+            } while (choiceLFSR <= 0 || choiceLFSR > 3);
+
+            switch (choiceLFSR) {
+            case 1:
+                std::cout << generateNumberLFSR(1024) << "\n";
+                break;
+            case 2:
+                start = clock();
+                for (int i = 0; i < 100; i++)
+                    generateNumberLFSR(1024);
+                end = clock();
+                timeLFSR = ((double)(end - start) / double(CLOCKS_PER_SEC)) / 100;
+
+                start = clock();
+                for (int i = 0; i < 10; i++)
+                    generateNumberBBS(1024);
+                end = clock();
+                timeBBS = ((double)(end - start) / double(CLOCKS_PER_SEC)) / 10;
+
+                start = clock();
+                for (int i = 0; i < 5; i++)
+                    generateNumberJacobi(1024);
+                end = clock();
+                timeJacobi = ((double)(end - start) / double(CLOCKS_PER_SEC)) / 5;
+
+                std::cout << "Time taken for LFSR => " << std::fixed << timeLFSR << "\n";
+                std::cout << "Time taken for BBS => " << std::fixed << timeBBS << "\n";
+                std::cout << "Time taken for Jacobi => " << std::fixed << timeJacobi << "\n";
+                std::cout << "The Time was aproximated for one Iteration\n";
+
+                break;
+            case 3:
+                choice = 1;
+            }
+
+            break;
+        case 3:
+            choice = 1;
+            break;
+        }
+    }
 
     return 0;
 }
