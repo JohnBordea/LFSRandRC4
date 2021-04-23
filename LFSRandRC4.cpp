@@ -222,7 +222,51 @@ void testBiasRC4(unsigned int iterations) {
     unsigned char key[256];
     unsigned int keyLength;
 
+    unsigned char S[256];
+    unsigned char swaper;
+    int i, j, k;
 
+    unsigned int secondZero = 0;
+
+    for (int tries = 0; tries < iterations; tries++) {
+        do {
+            keyLength = generateNumberLFSR8bit();
+        } while (keyLength <= 0 || keyLength >= 256);
+
+        for(i=0;i<keyLength;i++)
+            key[i] = generateNumberLFSR8bit();
+        
+        for (i = 0; i < 256; i++)
+            S[i] = i;
+
+        j = 0;
+
+        for (i = 0; i < 256; i++) {
+            j = (j + S[i] + key[i % keyLength]) % 256;
+            swaper = S[i];
+            S[i] = S[j];
+            S[j] = swaper;
+        }
+
+        i = 0;
+        j = 0;
+        for (int index = 0; index < 2; index++) {
+            i = (i + 1) % 256;
+            j = (j + S[i]) % 256;
+            swaper = S[i];
+            S[i] = S[j];
+            S[j] = swaper;
+            k = S[(S[i] + S[j]) % 256];
+        }
+
+        if (k == 0)secondZero++;
+    }
+
+    double exp = static_cast<double>(1) / 128;
+    double real = static_cast<double>(secondZero) / iterations;
+
+    std::cout << "Expectation: " << std::fixed << exp << "\n";
+    std::cout << "Reality: " << std::fixed << real << "\n";
 }
 
 int main(){
@@ -328,6 +372,9 @@ int main(){
                 RC4(key, keyLength, cryptotext, plaintextLength, cryptotext);
                 std::cout << "Plaintext :" << cryptotext << "\n";
                 break;
+            case 5:
+                testBiasRC4(10000);
+                break;
             case 6:
                 choice = 1;
                 break;
@@ -339,19 +386,5 @@ int main(){
             break;
         }
     }
-
-    
-    /*
-
-    
-
-    for (i = 0; i < 256; i++)
-        S[i] = i;
-    
-    
-
-        std::cout << (int)cryptotext[i] << " ";
-    }*/
-
     return 0;
 }
