@@ -218,6 +218,13 @@ void RC4(unsigned char key[256], unsigned int keyLength, unsigned char plaintext
     cryptotext[plaintextLength] = '\0';
 }
 
+void testBiasRC4(unsigned int iterations) {
+    unsigned char key[256];
+    unsigned int keyLength;
+
+
+}
+
 int main(){
     int choice = 1;
     int choiceLFSR = -1;
@@ -308,11 +315,22 @@ int main(){
                 break;
             case 3:
                 RC4(key, keyLength, plaintext, plaintextLength, cryptotext);
-                std::cout << "Cryptotext : ";
+                std::cout << "Cryptotext :\nString :" << cryptotext << "\nHexadecimal :";
                 for (int i = 0; i < plaintextLength; i++)
-                    std::cout << std::hex << (long)cryptotext[i] << " ";
+                    std::cout << std::hex << ((long)cryptotext[i]) << " ";
+                std::cout << "\nInt :";
+                for (int i = 0; i < plaintextLength; i++)
+                    std::cout << std::dec << ((long)cryptotext[i]) << " ";
                 std::cout << "\n";
                 decryptRC4 = 1;
+                break;
+            case 4:
+                RC4(key, keyLength, cryptotext, plaintextLength, cryptotext);
+                std::cout << "Plaintext :" << cryptotext << "\n";
+                break;
+            case 6:
+                choice = 1;
+                break;
             }
 
             break;
