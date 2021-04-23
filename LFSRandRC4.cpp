@@ -5,7 +5,18 @@
 
 using namespace NTL;
 
+unsigned char key[256];
+unsigned int keyLength;
 
+unsigned char plaintext[256];
+unsigned char cryptotext[256];
+unsigned int plaintextLength;
+
+unsigned char keystream[256];
+
+unsigned char S[256];
+unsigned char swaper;
+int i, j;
 
 int lfsrShiftTest4(int N) {
     N += ((((N & 1) + ((N >> 3) & 1)) % 2) << 4);
@@ -48,6 +59,20 @@ unsigned long long calulatePeriodOfLfsrShift64() {
     } while (n != k);
 
     return i;
+}
+
+unsigned char generateNumberLFSR8bit(){
+    unsigned char randomNumber = 0;
+
+    unsigned long long seed = ((((((static_cast<unsigned long long>(RandomBits_long(16)) << 16) + RandomBits_long(16)) << 16) + RandomBits_long(16)) << 16) + RandomBits_long(16));
+
+    for (unsigned int i = 0; i < 8; i++) {
+        randomNumber <<= 1;
+        seed = lfsrShift64(seed);
+        randomNumber += (seed >> 63);
+    }
+
+    return randomNumber;
 }
 
 ZZ generateNumberLFSR(unsigned int bitLength) {
@@ -155,13 +180,55 @@ void testPercentage(int iterations) {
     std::cout << "Percentages of\n0: " << percentage * 100 << "%\n1: " << (1 - percentage) * 100 << "%\n";
 }
 
+void assignString(unsigned char key[256], unsigned int& keyLength, std::string S) {
+    keyLength = S.size();
+    for (int i = 0; i < keyLength; i++) {
+        key[i] = S[i];
+    }
+    key[keyLength] = '\0';
+}
+
+void RC4(unsigned char key[256], unsigned int keyLength, unsigned char plaintext[256], unsigned int plaintextLength, unsigned char cryptotext[256]) {
+    for (i = 0; i < 256; i++)
+        S[i] = i;
+
+    j = 0;
+
+    for (i = 0; i < 256; i++) {
+        j = (j + S[i] + key[i % keyLength]) % 256;
+        swaper = S[i];
+        S[i] = S[j];
+        S[j] = swaper;
+    }
+
+    i = 0;
+    j = 0;
+    for (int index = 0; index < plaintextLength; index++) {
+        i = (i + 1) % 256;
+        j = (j + S[i]) % 256;
+        swaper = S[i];
+        S[i] = S[j];
+        S[j] = swaper;
+        keystream[index] = S[(S[i] + S[j]) % 256];
+    }
+
+    for (i = 0; i < plaintextLength; i++) {
+        cryptotext[i] = plaintext[i] ^ keystream[i];
+    }
+    cryptotext[plaintextLength] = '\0';
+}
+
 int main(){
     int choice = 1;
     int choiceLFSR = -1;
+    int choiceRC4 = -1;
+    int decryptRC4 = 0;
     double timeLFSR, timeBBS, timeJacobi;
     time_t start, end;
 
-    /*while (choice) {
+    std::string text;
+
+    while (choice) {
         switch (choice) {
         case 1:
             std::cout << "1. LFSR\n2. RC4\n3. Exit\n";
@@ -171,8 +238,11 @@ int main(){
             } while (choice <= 0 || choice > 3);
 
             choice++;
-            if (choice == 4)
-                choice = 0;
+
+            if (choice == 3) {
+                assignString(key, keyLength, "Key");
+                assignString(plaintext, plaintextLength, "Plaintext");
+            }
 
             break;
         case 2:
@@ -218,26 +288,52 @@ int main(){
             }
             break;
         case 3:
-            choice = 1;
+            std::cout << "1. Input key\n2. Input Plaintext\n3. Encrypt\n4. "; 
+            if (decryptRC4 == 0)std::cout << "[Blocked]";
+            std::cout << "Decrypt\n5. Test Bias\n6. Back\n";
+
+            do {
+                std::cin >> choiceRC4;
+                if (choiceRC4 == 4 && decryptRC4 == 0)choiceRC4 = 0;
+            } while (choiceRC4 <= 0 || choiceRC4 > 6);
+            
+            switch (choiceRC4) {
+            case 1:
+                std::cin >> text;
+                assignString(key, keyLength, text);
+                break;
+            case 2:
+                std::cin >> text;
+                assignString(plaintext, plaintextLength, text);
+                break;
+            case 3:
+                RC4(key, keyLength, plaintext, plaintextLength, cryptotext);
+                std::cout << "Cryptotext : ";
+                for (int i = 0; i < plaintextLength; i++)
+                    std::cout << std::hex << (long)cryptotext[i] << " ";
+                std::cout << "\n";
+                decryptRC4 = 1;
+            }
+
+            break;
+        case 4:
+            choice = 0;
             break;
         }
-    }*/
+    }
 
-    std::string key;
+    
+    /*
 
-    key = "pedia";
-    int S[256];
-    int i, j;
+    
 
     for (i = 0; i < 256; i++)
         S[i] = i;
     
-    j = 0;
+    
 
-    for (i = 0; i < 256; i++) {
-        j = (j + S[i] + key[i % key.size()]) % 256;
-        swap(S[i], S[j]);
-    }
+        std::cout << (int)cryptotext[i] << " ";
+    }*/
 
     return 0;
 }
